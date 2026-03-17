@@ -29,16 +29,25 @@ export function ConfigTab() {
 
   const handleAddBarber = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/barbers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newName, email: newEmail, password: newPassword }),
-    });
-    if (res.ok) {
-      setNewName('');
-      setNewEmail('');
-      setNewPassword('');
-      fetchBarbers();
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, email: newEmail, password: newPassword }),
+      });
+      if (res.ok) {
+        alert('Barbeiro adicionado com sucesso!');
+        setNewName('');
+        setNewEmail('');
+        setNewPassword('');
+        fetchBarbers();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erro ao adicionar barbeiro');
+      }
+    } catch (e) {
+      console.error("Failed to add barber", e);
+      alert('Erro de conexão ao adicionar barbeiro');
     }
   };
 

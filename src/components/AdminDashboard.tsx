@@ -14,6 +14,9 @@ export function AdminDashboard() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isAddingBarber, setIsAddingBarber] = useState(false);
+  const [newBarber, setNewBarber] = useState({ name: '', email: '', password: '' });
+
   useEffect(() => {
     fetchBarbers();
   }, []);
@@ -24,7 +27,7 @@ export function AdminDashboard() {
       const data = await res.json();
       if (Array.isArray(data)) {
         setBarbers(data);
-        if (data.length > 0) {
+        if (data.length > 0 && !selectedBarber) {
           handleSelectBarber(data[0]);
         }
       } else {
@@ -35,6 +38,27 @@ export function AdminDashboard() {
       setBarbers([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAddBarber = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBarber),
+      });
+      if (res.ok) {
+        setIsAddingBarber(false);
+        setNewBarber({ name: '', email: '', password: '' });
+        fetchBarbers();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erro ao adicionar barbeiro");
+      }
+    } catch (e) {
+      console.error("Failed to add barber", e);
     }
   };
 
@@ -109,7 +133,10 @@ export function AdminDashboard() {
               <Users size={20} className="text-brand-gold" />
               Equipe
             </h2>
-            <button className="p-2 bg-brand-gold/10 text-brand-gold rounded-xl hover:bg-brand-gold/20 transition-all">
+            <button 
+              onClick={() => setIsAddingBarber(true)}
+              className="p-2 bg-brand-gold/10 text-brand-gold rounded-xl hover:bg-brand-gold/20 transition-all"
+            >
               <Plus size={18} />
             </button>
           </div>
@@ -237,6 +264,69 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Add Barber Modal */}
+      {isAddingBarber && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-zinc-900 border border-white/10 p-8 rounded-3xl w-full max-w-md shadow-2xl"
+          >
+            <h2 className="text-2xl font-bold text-white mb-6">Novo Barbeiro</h2>
+            <form onSubmit={handleAddBarber} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Nome</label>
+                <input 
+                  required
+                  type="text"
+                  value={newBarber.name}
+                  onChange={e => setNewBarber({...newBarber, name: e.target.value})}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-brand-gold/50 outline-none transition-all"
+                  placeholder="Nome do barbeiro"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Email</label>
+                <input 
+                  required
+                  type="email"
+                  value={newBarber.email}
+                  onChange={e => setNewBarber({...newBarber, email: e.target.value})}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-brand-gold/50 outline-none transition-all"
+                  placeholder="email@barber.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Senha Inicial</label>
+                <input 
+                  required
+                  type="password"
+                  value={newBarber.password}
+                  onChange={e => setNewBarber({...newBarber, password: e.target.value})}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:border-brand-gold/50 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddingBarber(false)}
+                  className="flex-1 px-6 py-3 rounded-xl border border-white/5 text-zinc-400 font-semibold hover:bg-white/5 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 px-6 py-3 rounded-xl bg-brand-gold text-black font-bold hover:bg-brand-gold-light transition-all"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
