@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Goal } from '../types';
-import { Target, Save, User as UserIcon, DollarSign, Scissors, Award } from 'lucide-react';
+import { Target, Save, User as UserIcon, DollarSign, Scissors, Award, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatCurrency } from '../lib/utils';
 
@@ -14,7 +14,9 @@ export function GoalsManagementTab() {
   // Form states
   const [dailyRevenue, setDailyRevenue] = useState('');
   const [dailyQuantity, setDailyQuantity] = useState('');
+  const [dailyProduct, setDailyProduct] = useState('');
   const [monthlyRevenue, setMonthlyRevenue] = useState('');
+  const [monthlyProduct, setMonthlyProduct] = useState('');
   const [bonusValue, setBonusValue] = useState('');
 
   useEffect(() => {
@@ -49,11 +51,15 @@ export function GoalsManagementTab() {
       // Reset form with existing goals
       const dRev = data.find((g: Goal) => g.type === 'daily' && g.metric === 'revenue');
       const dQty = data.find((g: Goal) => g.type === 'daily' && g.metric === 'quantity');
+      const dProd = data.find((g: Goal) => g.type === 'daily' && g.metric === 'product_revenue');
       const mRev = data.find((g: Goal) => g.type === 'monthly' && g.metric === 'revenue');
+      const mProd = data.find((g: Goal) => g.type === 'monthly' && g.metric === 'product_revenue');
       
       setDailyRevenue(dRev?.target_value.toString() || '');
       setDailyQuantity(dQty?.target_value.toString() || '');
+      setDailyProduct(dProd?.target_value.toString() || '');
       setMonthlyRevenue(mRev?.target_value.toString() || '');
+      setMonthlyProduct(mProd?.target_value.toString() || '');
       setBonusValue(mRev?.bonus_value?.toString() || '');
     } catch (error) {
       console.error('Error fetching goals:', error);
@@ -72,7 +78,7 @@ export function GoalsManagementTab() {
         user_id: parseInt(selectedBarberId),
         type: 'daily',
         metric: 'revenue',
-        target_value: parseFloat(dailyRevenue),
+        target_value: parseFloat(dailyRevenue) || 0,
         start_date: '2024-01-01',
         end_date: '2024-12-31'
       },
@@ -80,7 +86,15 @@ export function GoalsManagementTab() {
         user_id: parseInt(selectedBarberId),
         type: 'daily',
         metric: 'quantity',
-        target_value: parseInt(dailyQuantity),
+        target_value: parseInt(dailyQuantity) || 0,
+        start_date: '2024-01-01',
+        end_date: '2024-12-31'
+      },
+      {
+        user_id: parseInt(selectedBarberId),
+        type: 'daily',
+        metric: 'product_revenue',
+        target_value: parseFloat(dailyProduct) || 0,
         start_date: '2024-01-01',
         end_date: '2024-12-31'
       },
@@ -88,8 +102,16 @@ export function GoalsManagementTab() {
         user_id: parseInt(selectedBarberId),
         type: 'monthly',
         metric: 'revenue',
-        target_value: parseFloat(monthlyRevenue),
-        bonus_value: parseFloat(bonusValue),
+        target_value: parseFloat(monthlyRevenue) || 0,
+        bonus_value: parseFloat(bonusValue) || 0,
+        start_date: '2024-01-01',
+        end_date: '2024-12-31'
+      },
+      {
+        user_id: parseInt(selectedBarberId),
+        type: 'monthly',
+        metric: 'product_revenue',
+        target_value: parseFloat(monthlyProduct) || 0,
         start_date: '2024-01-01',
         end_date: '2024-12-31'
       }
@@ -183,6 +205,23 @@ export function GoalsManagementTab() {
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2 ml-1">
+                      Venda de Produtos Diária (R$)
+                    </label>
+                    <div className="relative">
+                      <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                      <input
+                        type="number"
+                        value={dailyProduct}
+                        onChange={(e) => setDailyProduct(e.target.value)}
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
+                        placeholder="Ex: 50"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -206,6 +245,23 @@ export function GoalsManagementTab() {
                         onChange={(e) => setMonthlyRevenue(e.target.value)}
                         className="w-full bg-black/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
                         placeholder="Ex: 8000"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2 ml-1">
+                      Venda de Produtos Mensal (R$)
+                    </label>
+                    <div className="relative">
+                      <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                      <input
+                        type="number"
+                        value={monthlyProduct}
+                        onChange={(e) => setMonthlyProduct(e.target.value)}
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
+                        placeholder="Ex: 1000"
                         required
                       />
                     </div>
@@ -261,7 +317,7 @@ export function GoalsManagementTab() {
                   <div key={i} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
                     <div>
                       <p className="text-[10px] text-zinc-500 uppercase tracking-widest">
-                        {goal.type === 'daily' ? 'Diário' : goal.type === 'monthly' ? 'Mensal' : 'Semanal'} - {goal.metric === 'revenue' ? 'Faturamento' : 'Serviços'}
+                        {goal.type === 'daily' ? 'Diário' : goal.type === 'monthly' ? 'Mensal' : 'Semanal'} - {goal.metric === 'revenue' ? 'Faturamento' : goal.metric === 'product_revenue' ? 'Produtos' : 'Serviços'}
                       </p>
                       <p className="text-lg font-bold text-white">
                         {goal.metric === 'revenue' ? formatCurrency(goal.target_value) : `${goal.target_value} serv.`}

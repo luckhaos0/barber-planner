@@ -68,12 +68,16 @@ export function BarberPanelTab() {
 
   const calculateStats = () => {
     const totalRevenue = monthlyEntries.reduce((sum, e) => sum + e.revenue, 0);
+    const totalProductRevenue = monthlyEntries.reduce((sum, e) => sum + (e.product_revenue || 0), 0);
     const monthlyGoal = goals.find(g => g.type === 'monthly' && g.metric === 'revenue');
+    const monthlyProductGoal = goals.find(g => g.type === 'monthly' && g.metric === 'product_revenue');
     
     if (!monthlyGoal) return null;
 
     const remaining = Math.max(0, monthlyGoal.target_value - totalRevenue);
     const progress = (totalRevenue / monthlyGoal.target_value) * 100;
+    
+    const productProgress = monthlyProductGoal ? (totalProductRevenue / monthlyProductGoal.target_value) * 100 : 0;
     
     // Weekly logic
     const today = new Date();
@@ -91,10 +95,21 @@ export function BarberPanelTab() {
     } else if (dailyNeeded < weeklyTarget / 6) {
       suggestion = "Você está no caminho certo! Mantenha o ritmo.";
     } else {
-      suggestion = `Faltam ${formatCurrency(dailyNeeded)} por dia. Tente oferecer serviços adicionais (barba, sobrancelha).`;
+      suggestion = `Faltam ${formatCurrency(dailyNeeded)} por dia. Tente oferecer serviços adicionais (barba, sobrancelha) ou produtos.`;
     }
 
-    return { totalRevenue, monthlyGoal, remaining, progress, dailyNeeded, suggestion, weeklyTarget };
+    return { 
+      totalRevenue, 
+      totalProductRevenue, 
+      monthlyGoal, 
+      monthlyProductGoal, 
+      remaining, 
+      progress, 
+      productProgress, 
+      dailyNeeded, 
+      suggestion, 
+      weeklyTarget 
+    };
   };
 
   const stats = calculateStats();
@@ -141,11 +156,20 @@ export function BarberPanelTab() {
                 </div>
 
                 <div className="bg-black/20 border border-white/5 p-6 rounded-2xl">
-                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Faltam para a Meta</p>
-                  <h3 className="text-3xl font-bold text-purple-400">{formatCurrency(stats.remaining)}</h3>
-                  <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1">
-                    <Calendar size={12} /> {new Date().toLocaleDateString('pt-BR', { month: 'long' })}
-                  </p>
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Venda de Produtos</p>
+                  <h3 className="text-3xl font-bold text-emerald-500">{formatCurrency(stats.totalProductRevenue)}</h3>
+                  {stats.monthlyProductGoal && (
+                    <>
+                      <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(stats.productProgress, 100)}%` }}
+                          className="h-full bg-emerald-500"
+                        />
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-2">Meta: {formatCurrency(stats.monthlyProductGoal.target_value)} ({Math.round(stats.productProgress)}%)</p>
+                    </>
+                  )}
                 </div>
               </div>
 

@@ -12,6 +12,8 @@ export function BarberDashboard() {
   const [isLogging, setIsLogging] = useState(false);
   const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState('');
+  const [isLoggingProduct, setIsLoggingProduct] = useState(false);
+  const [productValue, setProductValue] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -66,7 +68,28 @@ export function BarberDashboard() {
     fetchData();
   };
 
-  const todayStats = performance.find(p => p.date === new Date().toISOString().split('T')[0]) || { count: 0, revenue: 0 };
+  const handleLogProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productValue) return;
+
+    await fetch('/api/daily-entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user?.id,
+        date: new Date().toISOString().split('T')[0],
+        revenue: todayStats.revenue,
+        quantity: todayStats.count,
+        product_revenue: (todayStats.product_revenue || 0) + parseFloat(productValue)
+      })
+    });
+
+    setProductValue('');
+    setIsLoggingProduct(false);
+    fetchData();
+  };
+
+  const todayStats = performance.find(p => p.date === new Date().toISOString().split('T')[0]) || { count: 0, revenue: 0, product_revenue: 0 };
 
   return (
     <div className="space-y-8">
@@ -76,19 +99,30 @@ export function BarberDashboard() {
           <h1 className="text-3xl font-bold text-white">Bem-vindo de volta, {user?.name.split(' ')[0]}</h1>
           <p className="text-zinc-500">Pronto para mais um dia de cortes precisos?</p>
         </div>
-        <button 
-          onClick={() => setIsLogging(true)}
-          className="bg-brand-gold hover:bg-brand-gold-light text-black font-bold px-6 py-3 rounded-2xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(197,160,89,0.2)]"
-        >
-          <Plus size={20} />
-          Logar Serviço
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setIsLoggingProduct(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-2xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+          >
+            <TrendingUp size={20} />
+            Venda Produto
+          </button>
+          <button 
+            onClick={() => setIsLogging(true)}
+            className="bg-brand-gold hover:bg-brand-gold-light text-black font-bold px-6 py-3 rounded-2xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(197,160,89,0.2)]"
+          >
+            <Plus size={20} />
+            Logar Serviço
+          </button>
+        </div>
       </div>
 
       {/* Today's Progress */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {goals.filter(g => g.type === 'daily').map((goal, i) => {
-          const current = goal.metric === 'quantity' ? todayStats.count : todayStats.revenue;
+          const isRevenue = goal.metric === 'revenue';
+          const isProduct = goal.metric === 'product_revenue';
+          const current = isRevenue ? todayStats.revenue : isProduct ? (todayStats.product_revenue || 0) : todayStats.count;
           const progress = Math.min((current / goal.target_value) * 100, 100);
           
           return (
@@ -107,11 +141,11 @@ export function BarberDashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-1">
-                      Diário: {goal.metric === 'revenue' ? 'Faturamento' : 'Serviços'}
+                      Diário: {goal.metric === 'revenue' ? 'Faturamento' : goal.metric === 'product_revenue' ? 'Produtos' : 'Serviços'}
                     </p>
                     <h3 className="text-2xl font-bold text-white">
-                      {goal.metric === 'revenue' ? formatCurrency(current) : current} 
-                      <span className="text-zinc-500 text-lg font-medium"> / {goal.metric === 'revenue' ? formatCurrency(goal.target_value) : goal.target_value}</span>
+                      {isRevenue || isProduct ? formatCurrency(current) : current} 
+                      <span className="text-zinc-500 text-lg font-medium"> / {isRevenue || isProduct ? formatCurrency(goal.target_value) : goal.target_value}</span>
                     </h3>
                   </div>
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${progress >= 100 ? 'bg-brand-gold/20 text-brand-gold' : 'bg-white/5 text-zinc-400'}`}>
@@ -172,7 +206,57 @@ export function BarberDashboard() {
         </div>
       </div>
 
-      {/* Log Service Modal */}
+      {/* Log Product Modal */}
+      <AnimatePresence>
+        {isLoggingProduct && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLoggingProduct(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-3xl shadow-2xl p-8"
+            >
+              <h2 className="text-2xl font-bold text-white mb-6">Logar Venda de Produto</h2>
+              <form onSubmit={handleLogProduct} className="space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Valor do Produto (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={productValue}
+                    onChange={(e) => setProductValue(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsLoggingProduct(false)}
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl transition-all"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {isLogging && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

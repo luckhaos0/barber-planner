@@ -10,7 +10,7 @@ export interface Goal {
   id: number;
   user_id: number;
   type: 'daily' | 'weekly' | 'monthly';
-  metric: 'quantity' | 'revenue';
+  metric: 'quantity' | 'revenue' | 'product_revenue';
   target_value: number;
   weekly_target?: number;
   bonus_value?: number;
@@ -25,6 +25,7 @@ export interface DailyEntry {
   date: string;
   revenue: number;
   quantity: number;
+  product_revenue?: number;
 }
 
 export interface DashboardMonthlyData {
@@ -47,6 +48,7 @@ export interface Service {
 export interface PerformanceData {
   count: number;
   revenue: number;
+  product_revenue?: number;
   date: string;
 }
 

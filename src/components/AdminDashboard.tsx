@@ -231,9 +231,12 @@ export function AdminDashboard() {
               ) : (
                 goals.map((goal, i) => {
                   const isRevenue = goal.metric === 'revenue';
+                  const isProduct = goal.metric === 'product_revenue';
                   const current = isRevenue 
                     ? performance.reduce((acc, curr) => acc + curr.revenue, 0)
-                    : performance.reduce((acc, curr) => acc + curr.count, 0);
+                    : isProduct
+                      ? performance.reduce((acc, curr) => acc + (curr.product_revenue || 0), 0)
+                      : performance.reduce((acc, curr) => acc + curr.count, 0);
                   
                   const progress = (current / goal.target_value) * 100;
 
@@ -241,19 +244,19 @@ export function AdminDashboard() {
                     <div key={i} className="bg-black/20 border border-white/5 p-4 rounded-2xl">
                       <div className="flex justify-between items-end mb-3">
                         <p className="text-sm font-medium text-zinc-300 uppercase tracking-widest text-[10px]">
-                          {goal.type === 'daily' ? 'Diário' : goal.type === 'monthly' ? 'Mensal' : 'Semanal'} - {goal.metric === 'revenue' ? 'Faturamento' : 'Serviços'}
+                          {goal.type === 'daily' ? 'Diário' : goal.type === 'monthly' ? 'Mensal' : 'Semanal'} - {goal.metric === 'revenue' ? 'Faturamento' : goal.metric === 'product_revenue' ? 'Produtos' : 'Serviços'}
                         </p>
                         <p className="text-xs text-zinc-500">
                           <span className="text-white font-bold">
-                            {isRevenue ? formatCurrency(current) : current}
-                          </span> / {isRevenue ? formatCurrency(goal.target_value) : goal.target_value}
+                            {isRevenue || isProduct ? formatCurrency(current) : current}
+                          </span> / {isRevenue || isProduct ? formatCurrency(goal.target_value) : goal.target_value}
                         </p>
                       </div>
                       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min(progress, 100)}%` }}
-                          className={`h-full ${isRevenue ? 'bg-brand-gold' : 'bg-blue-500'}`}
+                          className={`h-full ${isRevenue ? 'bg-brand-gold' : isProduct ? 'bg-emerald-500' : 'bg-blue-500'}`}
                         />
                       </div>
                     </div>

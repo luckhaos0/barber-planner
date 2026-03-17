@@ -121,10 +121,10 @@ async function startServer() {
 
   app.post("/api/daily-entries", async (req, res) => {
     try {
-      const { user_id, date, revenue, quantity } = req.body;
+      const { user_id, date, revenue, quantity, product_revenue } = req.body;
       const { error } = await getSupabase()
         .from("daily_entries")
-        .upsert({ user_id, date, revenue, quantity }, { onConflict: "user_id, date" });
+        .upsert({ user_id, date, revenue, quantity, product_revenue }, { onConflict: "user_id, date" });
       
       if (error) return res.status(500).json({ error: error.message });
       res.json({ success: true });
@@ -147,29 +147,32 @@ async function startServer() {
       const results = await Promise.all(barbers.map(async (barber) => {
         const { data: entries } = await getSupabase()
           .from("daily_entries")
-          .select("revenue, quantity")
+          .select("revenue, quantity, product_revenue")
           .eq("user_id", barber.id)
           .like("date", `${month}%`);
 
         const { data: goals } = await getSupabase()
           .from("goals")
-          .select("target_value, bonus_value")
+          .select("target_value, bonus_value, metric")
           .eq("user_id", barber.id)
-          .eq("type", "monthly")
-          .eq("metric", "revenue")
-          .limit(1);
+          .eq("type", "monthly");
 
         const total_revenue = entries?.reduce((acc, curr) => acc + curr.revenue, 0) || 0;
         const total_quantity = entries?.reduce((acc, curr) => acc + curr.quantity, 0) || 0;
-        const goal = goals?.[0];
+        const total_product_revenue = entries?.reduce((acc, curr) => acc + (curr.product_revenue || 0), 0) || 0;
+        
+        const revenueGoal = goals?.find(g => g.metric === 'revenue');
+        const productGoal = goals?.find(g => g.metric === 'product_revenue');
 
         return {
           user_id: barber.id,
           barber_name: barber.name,
           total_revenue,
           total_quantity,
-          monthly_revenue_goal: goal?.target_value || 0,
-          bonus_value: goal?.bonus_value || 0
+          total_product_revenue,
+          monthly_revenue_goal: revenueGoal?.target_value || 0,
+          monthly_product_goal: productGoal?.target_value || 0,
+          bonus_value: revenueGoal?.bonus_value || 0
         };
       }));
 

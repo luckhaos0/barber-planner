@@ -11,6 +11,7 @@ export function DailyEntriesTab() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [revenue, setRevenue] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [productRevenue, setProductRevenue] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -62,12 +63,14 @@ export function DailyEntriesTab() {
         date,
         revenue: parseFloat(revenue),
         quantity: parseInt(quantity),
+        product_revenue: parseFloat(productRevenue) || 0,
       }),
     });
 
     if (res.ok) {
       setRevenue('');
       setQuantity('');
+      setProductRevenue('');
       fetchEntries();
     }
   };
@@ -139,6 +142,21 @@ export function DailyEntriesTab() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Venda de Produtos (R$)</label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={productRevenue}
+                  onChange={(e) => setProductRevenue(e.target.value)}
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                  placeholder="Ex: 50.00"
+                />
+              </div>
+            </div>
+
             <button type="submit" className="w-full bg-brand-gold hover:bg-brand-gold-light text-black font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(197,160,89,0.2)]">
               <Save size={20} /> Salvar Lançamento
             </button>
@@ -159,7 +177,8 @@ export function DailyEntriesTab() {
                 <tr className="bg-black/20 text-zinc-500 text-[10px] uppercase tracking-widest">
                   <th className="px-6 py-4 font-semibold">Data</th>
                   <th className="px-6 py-4 font-semibold">Barbeiro</th>
-                  <th className="px-6 py-4 font-semibold">Faturamento</th>
+                  <th className="px-6 py-4 font-semibold">Serviços</th>
+                  <th className="px-6 py-4 font-semibold">Produtos</th>
                   <th className="px-6 py-4 font-semibold">Qtd.</th>
                 </tr>
               </thead>
@@ -174,6 +193,9 @@ export function DailyEntriesTab() {
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-brand-gold">
                       {formatCurrency(entry.revenue)}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-emerald-500">
+                      {formatCurrency(entry.product_revenue || 0)}
                     </td>
                     <td className="px-6 py-4 text-sm text-zinc-400">
                       {entry.quantity}
